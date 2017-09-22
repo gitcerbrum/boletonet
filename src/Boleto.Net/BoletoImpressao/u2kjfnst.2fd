@@ -593,9 +593,9 @@ namespace BoletoNet
                 /// Alteração para exibir o endereço completo no boleto de forma correta
                 /// 
 
-                enderecoSacado += (Sacado.Endereco.End != String.Empty ? "END. " + Sacado.Endereco.End + "<br />, " : "");
-                enderecoSacado += (Sacado.Endereco.Bairro != String.Empty ? Sacado.Endereco.Bairro + ", " : "");
-                enderecoSacado += (Sacado.Endereco.Cidade != String.Empty ? Sacado.Endereco.Cidade + "" : "");
+                enderecoSacado += (Sacado.Endereco.End != String.Empty ? Sacado.Endereco.End + " - " : "");
+                enderecoSacado += (Sacado.Endereco.Bairro != String.Empty ? Sacado.Endereco.Bairro + " - " : "");
+                enderecoSacado += (Sacado.Endereco.Cidade != String.Empty ? " " + Sacado.Endereco.Cidade + " " : "");
                 enderecoSacado += (Sacado.Endereco.UF != String.Empty ? " / " + Sacado.Endereco.UF + " " : "");
                 enderecoSacado += (Sacado.Endereco.CEP != String.Empty ? " - CEP:  " + Sacado.Endereco.CEP + " " : "");
 

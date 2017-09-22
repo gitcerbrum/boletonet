@@ -45,7 +45,7 @@ img {
 }
 
 .bc {
-	font: bold 20px arial;
+	font: bold 22px arial;
 	color: #000000;
 }
 
@@ -103,12 +103,12 @@ img {
 }
 
 .imgLogo {
-	width: 150px;
+	width:75px;
 }
 
 	.imgLogo img {
-		width: 150px;
-		height: 40px;
+		width: 75px;
+		height: 20px;
 	}
 
 .barra {
@@ -151,11 +151,11 @@ img {
 }
 
 .h13 {
-	height: 13px;
+	height: 3px;
 }
 
 .h12 {
-	height: 12px;
+	height: 2px;
 }
 
 .h13 td {
@@ -359,7 +359,9 @@ img {
 
 .ebc {
 	width: 4px;
-	height: 440px;
-	border-right: dotted 1px #000000;
+	height: 396px;
+	border-right: dotted 2px #000000;
 	margin-right: 4px;
 }
+
+#Panel1  br {display:none !important;}
