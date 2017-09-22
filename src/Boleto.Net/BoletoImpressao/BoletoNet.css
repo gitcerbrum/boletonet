@@ -359,9 +359,21 @@ img {
 
 .ebc {
 	width: 4px;
+<<<<<<< HEAD
 	height: 396px;
 	border-right: dotted 2px #000000;
 	margin-right: 4px;
 }
 
 #Panel1  br {display:none !important;}
+=======
+	height: 400px;
+	border-right: dotted 1px #000000;
+	margin-right: 4px;
+}
+.break {
+    display: block;
+    clear: both;
+    page-break-after: always;
+}
+>>>>>>> 3769845a16daf73df5d751ed867f20c6863769e5

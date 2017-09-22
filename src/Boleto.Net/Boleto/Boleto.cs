@@ -19,6 +19,7 @@ namespace BoletoNet
 		private string _variacaoCarteira = string.Empty;
 		private string _nossoNumero = string.Empty;
 		private string _digitoNossoNumero = string.Empty;
+        private bool _apenasRegistrar = false;
 		private DateTime _dataVencimento;
 		private DateTime _dataDocumento;
 		private DateTime _dataProcessamento;
@@ -29,7 +30,7 @@ namespace BoletoNet
 		private int _quantidadeMoeda = 1;
 		private string _valorMoeda = string.Empty;
 		private IList<IInstrucao> _instrucoes = new List<IInstrucao>();
-		private IEspecieDocumento _especieDocumento = new EspecieDocumento();
+        private IEspecieDocumento _especieDocumento;
 		private string _aceite = "N";
 		private string _numeroDocumento = string.Empty;
 		private string _especie = "R$";
@@ -63,11 +64,11 @@ namespace BoletoNet
 		private short _percentualIOS;
         private short _modalidadeCobranca = 0;
         private short _numeroDiasBaixa = 0;
+		private string _numeroControle;
 
 		private string _tipoModalidade = string.Empty;
 		private Remessa _remessa;
-        private string _numeroControle;
-        
+
 		private ObservableCollection<GrupoDemonstrativo> _demonstrativos;
 
 		#endregion
@@ -77,7 +78,7 @@ namespace BoletoNet
 		{
 		}
 
-		public Boleto(DateTime dataVencimento, decimal valorBoleto, string carteira, string nossoNumero, Cedente cedente, EspecieDocumento especieDocumento)
+		public Boleto(DateTime dataVencimento, decimal valorBoleto, string carteira, string nossoNumero, Cedente cedente, IEspecieDocumento especieDocumento)
 		{
 			this._carteira = carteira;
 			this._nossoNumero = nossoNumero;
@@ -258,7 +259,7 @@ namespace BoletoNet
 		/// </summary>
 		public IEspecieDocumento EspecieDocumento
 		{
-			get { return this._especieDocumento ?? (this._especieDocumento = new EspecieDocumento()); }
+			get { return this._especieDocumento ?? (this._especieDocumento = new EspecieDocumento().DuplicataMercantil(Banco)); }
 			set { this._especieDocumento = value; }
 		}
 
@@ -316,6 +317,16 @@ namespace BoletoNet
 			set { this._nossoNumero = value; }
 		}
 
+        /// <summary> 
+        /// Condição para Emissão da Papeleta de Cobrança
+        /// 1 = Banco emite e Processa o registro. 2 = Cliente emite e o Banco somente processa o registro
+        /// </summary>        
+        public bool ApenasRegistrar
+        {
+            get { return _apenasRegistrar; }
+            set { _apenasRegistrar = value; }
+        }
+
 		/// <summary> 
 		/// Recupera o valor da moeda 
 		/// </summary>  
@@ -365,6 +376,14 @@ namespace BoletoNet
 			get { return this._sacado; }
 			set { this._sacado = value; }
 		}
+
+		/// <summary>
+		/// Dados do avalista.
+		/// Este campo é necessário para correspondentes bancários, como 
+		/// por exemplo o Banco Daycoval.
+		/// O avalista deve ser exibido para que estes bancos homologuem.
+		/// </summary>
+		public Cedente Avalista { get; set; }
 
 		/// <summary> 
 		/// Para uso do banco 
