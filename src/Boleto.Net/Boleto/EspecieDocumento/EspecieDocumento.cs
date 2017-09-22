@@ -1,10 +1,11 @@
+using BoletoNet.Excecoes;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace BoletoNet
 {
-    public class EspecieDocumento : AbstractEspecieDocumento, IEspecieDocumento
+    public class EspecieDocumento : IEspecieDocumento
     {
 
         #region Variaveis
@@ -47,25 +48,34 @@ namespace BoletoNet
 
         #region Propriedades da interface
 
-        public override IBanco Banco
+        public IBanco Banco
         {
             get { return _IEspecieDocumento.Banco; }
             set { _IEspecieDocumento.Banco = value; }
         }
 
-        public override string Codigo
+        public string Codigo
         {
             get { return _IEspecieDocumento.Codigo; }
             set { _IEspecieDocumento.Codigo = value; }
         }
 
-        public override string Sigla
+        public string Sigla
         {
-            get { return _IEspecieDocumento.Sigla; }
+            get
+            {
+
+                if (_IEspecieDocumento == null)
+                {
+                    return string.Empty;
+                }
+
+                return _IEspecieDocumento.Sigla;
+            }
             set { _IEspecieDocumento.Sigla = value; }
         }
 
-        public override string Especie
+        public string Especie
         {
             get { return _IEspecieDocumento.Especie; }
             set { _IEspecieDocumento.Especie = value; }
@@ -135,6 +145,12 @@ namespace BoletoNet
                     case 4:
                         _IEspecieDocumento = new EspecieDocumento_Nordeste(codigoEspecie);
                         break;
+                    case 707:
+                        this._IEspecieDocumento = new EspecieDocumento_Daycoval(codigoEspecie);
+                        break;
+                    case 637:
+                        this._IEspecieDocumento = new EspecieDocumento_Sofisa(codigoEspecie);
+                        break;
                     default:
                         throw new Exception("Código do banco não implementando: " + codigoBanco);
                 }
@@ -149,7 +165,6 @@ namespace BoletoNet
         {
             try
             {
-
                 switch (codigoBanco)
                 {
                     case 1:
@@ -215,5 +230,37 @@ namespace BoletoNet
                 return "0";
             }
         }
+
+        public IEspecieDocumento DuplicataMercantil()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEspecieDocumento DuplicataMercantil(IBanco banco)
+        {
+            if (!especiesDocumentosBancos.ContainsKey(banco.Codigo))
+                throw new BoletoNetException("Espécies de documentos não implementados para o banco.");
+
+            return especiesDocumentosBancos[banco.Codigo].DuplicataMercantil();
+        }
+
+        private static Dictionary<int, AbstractEspecieDocumento> especiesDocumentosBancos = new Dictionary<int, AbstractEspecieDocumento>() {
+                { 341, new EspecieDocumento_Itau       ()  },
+                { 479, new EspecieDocumento_BankBoston ()  },
+                { 1, new EspecieDocumento_BancoBrasil  ()  },
+                { 237, new EspecieDocumento_Bradesco   ()  },
+                { 356, new EspecieDocumento_Real       ()  },
+                { 33, new EspecieDocumento_Santander   ()  },
+                { 347, new EspecieDocumento_Sudameris  ()  },
+                { 104, new EspecieDocumento_Caixa      ()  },
+                { 399, new EspecieDocumento_HSBC       ()  },
+                { 748, new EspecieDocumento_Sicredi    ()  },
+                { 41, new EspecieDocumento_Banrisul    ()  },
+                { 85, new EspecieDocumento_Cecred      ()  },
+                { 756, new EspecieDocumento_Sicoob     ()  },
+                { 4, new EspecieDocumento_Nordeste     ()  },
+                { 707, new EspecieDocumento_Daycoval   ()  },
+                { 637, new EspecieDocumento_Sofisa     ()  }
+        };
     }
 }

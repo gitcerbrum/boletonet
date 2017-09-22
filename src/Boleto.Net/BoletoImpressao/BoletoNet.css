@@ -365,3 +365,10 @@ img {
 }
 
 #Panel1  br {display:none !important;}
+
+
+.break {
+    display: block;
+    clear: both;
+    page-break-after: always;
+}

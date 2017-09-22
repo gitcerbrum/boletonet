@@ -1,18 +1,16 @@
+using BoletoNet.Util;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Text;
-using System.Web.UI;
-using BoletoNet.Util;
+using System.Globalization;
 //Envio por email
 using System.IO;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Reflection;
-using System.Drawing.Imaging;
-using System.Web;
-using System.Globalization;
+using System.Text;
+using System.Web.UI;
 
 [assembly: WebResource("BoletoNet.BoletoImpressao.BoletoNet.css", "text/css", PerformSubstitution = true)]
 [assembly: WebResource("BoletoNet.Imagens.barra.gif", "image/gif")]
@@ -645,7 +643,7 @@ namespace BoletoNet
                 switch (Boleto.Banco.Codigo)
                 {
                     case 748:
-                        agenciaCodigoCedente = string.Format("{0}.{1}.{2}", Cedente.ContaBancaria.Agencia, Cedente.ContaBancaria.OperacaConta, Cedente.Codigo);
+                        agenciaCodigoCedente = string.Format("{0}.{1}.{2}", Cedente.ContaBancaria.Agencia, Cedente.ContaBancaria.OperacaConta, Utils.FormatCode(Cedente.ContaBancaria.Conta, 5));
                         break;
                     case 41:
                         agenciaCodigoCedente = string.Format("{0}.{1}/{2}.{3}.{4}", Cedente.ContaBancaria.Agencia, Cedente.ContaBancaria.DigitoAgencia, Cedente.Codigo.Substring(4, 6), Cedente.Codigo.Substring(10, 1), Cedente.DigitoCedente);
@@ -674,7 +672,7 @@ namespace BoletoNet
                     //agenciaCodigoCedente = Utils.FormatCode(Cedente.Codigo.ToString(), 7); -> para Banco HSBC mostra apenas código Cedente - por Ponce em 08/06/2012
                     agenciaCodigoCedente = String.Format("{0}/{1}", Cedente.ContaBancaria.Agencia, Utils.FormatCode(Cedente.Codigo.ToString(), 7)); //Solicitação do HSBC que mostrasse agencia/Conta - por Transis em 24/02/15
                 else if (Boleto.Banco.Codigo == 748)
-                    agenciaCodigoCedente = string.Format("{0}.{1}.{2}", Cedente.ContaBancaria.Agencia, Cedente.ContaBancaria.OperacaConta, Cedente.Codigo);
+                    agenciaCodigoCedente = string.Format("{0}.{1}.{2}", Cedente.ContaBancaria.Agencia, Cedente.ContaBancaria.OperacaConta, Utils.FormatCode(Cedente.ContaBancaria.Conta, 5));
                 else
                     agenciaCodigoCedente = agenciaConta;
             }
@@ -696,8 +694,7 @@ namespace BoletoNet
 
             var valorBoleto = (Boleto.ValorBoleto == 0 ? "" : Boleto.ValorBoleto.ToString("C", CultureInfo.GetCultureInfo("PT-BR")));
 
-            return html
-                .Replace("@CODIGOBANCO", Utils.FormatCode(_ibanco.Codigo.ToString(), 3))
+            return html.Replace("@CODIGOBANCO", Utils.FormatCode(_ibanco.Codigo.ToString(), 3))
                 .Replace("@DIGITOBANCO", _ibanco.Digito)
                 //.Replace("@URLIMAGEMBARRAINTERNA", urlImagemBarraInterna)
                 //.Replace("@URLIMAGEMCORTE", urlImagemCorte)
@@ -708,7 +705,11 @@ namespace BoletoNet
                 .Replace("@LINHADIGITAVEL", Boleto.CodigoBarra.LinhaDigitavel)
                 .Replace("@LOCALPAGAMENTO", Boleto.LocalPagamento)
                 .Replace("@DATAVENCIMENTO", dataVencimento)
-                .Replace("@CEDENTE_BOLETO", !Cedente.MostrarCNPJnoBoleto ? Cedente.Nome : string.Format("{0}&nbsp;&nbsp;&nbsp;CNPJ: {1}", Cedente.Nome, Cedente.CPFCNPJcomMascara))
+                .Replace(
+                    "@CEDENTE_BOLETO",
+                    !Cedente.MostrarCNPJnoBoleto
+                        ? Cedente.Nome
+                        : string.Format("{0}&nbsp;&nbsp;&nbsp;CNPJ: {1}", Cedente.Nome, Cedente.CPFCNPJcomMascara))
                 .Replace("@CEDENTE", Cedente.Nome)
                 .Replace("@DATADOCUMENTO", Boleto.DataDocumento.ToString("dd/MM/yyyy"))
                 .Replace("@NUMERODOCUMENTO", Boleto.NumeroDocumento)
@@ -716,10 +717,18 @@ namespace BoletoNet
                 .Replace("@DATAPROCESSAMENTO", Boleto.DataProcessamento.ToString("dd/MM/yyyy"))
 
             #region Implementação para o Banco do Brasil
+
                 //Variável inserida para atender às especificações das carteiras "17-019", "17-027" e "18-019" do Banco do Brasil
                 //apenas para a ficha de compensação.
                 //Como a variável não existirá se não forem as carteiras "17-019", "17-027", "17-019", "17-035", "17-140", "17-159", "17-067", "17-167" e "18-019", não foi colocado o [if].
-                .Replace("@NOSSONUMEROBB", Boleto.Banco.Codigo == 1 & (Boleto.Carteira.Equals("17-019") | Boleto.Carteira.Equals("17-027") | Boleto.Carteira.Equals("17-035") | Boleto.Carteira.Equals("18-019") | Boleto.Carteira.Equals("17-140") | Boleto.Carteira.Equals("17-159") | Boleto.Carteira.Equals("17-067") | Boleto.Carteira.Equals("17-167")) ? Boleto.NossoNumero.Substring(3) : string.Empty)
+                .Replace(
+                    "@NOSSONUMEROBB",
+                    Boleto.Banco.Codigo == 1
+                    & (Boleto.Carteira.Equals("17-019") | Boleto.Carteira.Equals("17-027") | Boleto.Carteira.Equals("17-035")
+                        | Boleto.Carteira.Equals("18-019") | Boleto.Carteira.Equals("17-140") | Boleto.Carteira.Equals("17-159")
+                        | Boleto.Carteira.Equals("17-067") | Boleto.Carteira.Equals("17-167"))
+                        ? Boleto.NossoNumero.Substring(3)
+                        : string.Empty)
             #endregion Implementação para o Banco do Brasil
 
                 .Replace("@NOSSONUMERO", Boleto.NossoNumero)
@@ -728,21 +737,34 @@ namespace BoletoNet
                 .Replace("@QUANTIDADE", (Boleto.QuantidadeMoeda == 0 ? "" : Boleto.QuantidadeMoeda.ToString()))
                 .Replace("@VALORDOCUMENTO", Boleto.ValorMoeda)
                 .Replace("@=VALORDOCUMENTO", valorBoleto)
-                .Replace("@VALORCOBRADO", (Boleto.ValorCobrado == 0 ? "" : Boleto.ValorCobrado.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
+                .Replace(
+                    "@VALORCOBRADO",
+                    (Boleto.ValorCobrado == 0 ? "" : Boleto.ValorCobrado.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
                 .Replace("@OUTROSACRESCIMOS", "")
                 .Replace("@OUTRASDEDUCOES", "")
-                .Replace("@DESCONTOS", (Boleto.ValorDesconto == 0 ? "" : Boleto.ValorDesconto.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
+                .Replace(
+                    "@DESCONTOS",
+                    (Boleto.ValorDesconto == 0 ? "" : Boleto.ValorDesconto.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
                 .Replace("@AGENCIACONTA", agenciaCodigoCedente)
                 .Replace("@SACADO", sacado)
                 .Replace("@INFOSACADO", infoSacado)
                 .Replace("@AGENCIACODIGOCEDENTE", agenciaCodigoCedente)
                 .Replace("@CPFCNPJ", Cedente.CPFCNPJ)
-                .Replace("@MORAMULTA", (Boleto.ValorMulta == 0 ? "" : Boleto.ValorMulta.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
+                .Replace(
+                    "@MORAMULTA",
+                    (Boleto.ValorMulta == 0 ? "" : Boleto.ValorMulta.ToString("C", CultureInfo.GetCultureInfo("PT-BR"))))
                 .Replace("@AUTENTICACAOMECANICA", "")
                 .Replace("@USODOBANCO", Boleto.UsoBanco)
                 .Replace("@IMAGEMCODIGOBARRA", imagemCodigoBarras)
-                .Replace("@ACEITE", Boleto.Aceite).ToString()
+                .Replace("@ACEITE", Boleto.Aceite)
+                .ToString()
                 .Replace("@ENDERECOCEDENTE", MostrarEnderecoCedente ? enderecoCedente : "")
+                .Replace(
+                    "@AVALISTA",
+                    string.Format(
+                        "{0} - {1}",
+                        Boleto.Avalista != null ? Boleto.Avalista.Nome : string.Empty,
+                        Boleto.Avalista != null ? Boleto.Avalista.CPFCNPJ : string.Empty))
                 .Replace("Ar\">R$", RemoveSimboloMoedaValorDocumento ? "Ar\">" : "Ar\">R$");
 
         }
@@ -803,18 +825,20 @@ namespace BoletoNet
         /// <param name="srcBarra">Local apontado pela imagem de barra.</param>
         /// <param name="srcCodigoBarra">Local apontado pela imagem do código de barras.</param>
         /// <returns>StringBuilder conténdo o código html do boleto bancário.</returns>
-        protected StringBuilder HtmlOffLine(string textoNoComecoDoEmail, string srcLogo, string srcBarra, string srcCodigoBarra, bool usaCSSPDF = false)
+        protected StringBuilder HtmlOffLine(string textoNoComecoDoEmail, string srcLogo, string srcBarra, string srcCodigoBarra, bool usaCSSPDF = false, bool imprimeHeader = true, bool imprimeFooter = true)
         {//protected StringBuilder HtmlOffLine(string srcCorte, string srcLogo, string srcBarra, string srcPonto, string srcBarraInterna, string srcCodigoBarra)
             this.OnLoad(EventArgs.Empty);
 
             StringBuilder html = new StringBuilder();
-            HtmlOfflineHeader(html, usaCSSPDF);
+            if (imprimeHeader)
+                HtmlOfflineHeader(html, usaCSSPDF);
             if (textoNoComecoDoEmail != null && textoNoComecoDoEmail != "")
             {
                 html.Append(textoNoComecoDoEmail);
             }
             html.Append(MontaHtml(srcLogo, srcBarra, "<img src=\"" + srcCodigoBarra + "\" alt=\"Código de Barras\" />"));
-            HtmlOfflineFooter(html);
+            if (imprimeFooter)
+                HtmlOfflineFooter(html);
             return html;
         }
 
@@ -825,14 +849,14 @@ namespace BoletoNet
         /// Monta o Header de um email com pelo menos um boleto dentro.
         /// </summary>
         /// <param name="saida">StringBuilder onde o conteudo sera salvo.</param>
-        protected static void HtmlOfflineHeader(StringBuilder html, bool usaCSSPDF = false)
+        protected static void HtmlOfflineHeader(StringBuilder html, bool usaCSSPDF = false, string titulo = "Boleto.Net")
         {
             html.Append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n");
             html.Append("<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
             html.Append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n");
             html.Append("<meta charset=\"utf-8\"/>\n");
             html.Append("<head>");
-            html.Append("    <title>Boleto.Net</title>\n");
+            html.Append("    <title>" + titulo + "</title>\n");
 
             #region Css
             {
@@ -1181,66 +1205,79 @@ namespace BoletoNet
         /// de acordo com o padrão http://en.wikipedia.org/wiki/Data_URI_scheme
         /// </summary>
         /// <param name="convertLinhaDigitavelToImage">Converte a Linha Digitável para imagem, com o objetivo de evitar malwares.</param>
+        /// <param name="somenteHtmlBoleto">Quando true imprime apenas a table do boleto ignorando o CSS e o html/head/body. Utilizado para dimunir o tamanho do html quando imprimir mais de um boleto</param>
         /// <returns>Html do boleto gerado</returns>
         /// <desenvolvedor>Iuri André Stona</desenvolvedor>
         /// <criacao>23/01/2014</criacao>
         /// <alteracao>08/08/2014</alteracao>
 
-        public string MontaHtmlEmbedded(bool convertLinhaDigitavelToImage = false, bool usaCSSPDF = false)
+        public string MontaHtmlEmbedded(bool convertLinhaDigitavelToImage = false, bool usaCSSPDF = false, bool imprimeHeader = true,  bool imprimeFooter = true)
         {
             OnLoad(EventArgs.Empty);
-
-            var assembly = Assembly.GetExecutingAssembly();
-
-            var streamLogo = assembly.GetManifestResourceStream("BoletoNet.Imagens." + CodigoBanco.ToString("000") + ".jpg");
-            string base64Logo = Convert.ToBase64String(new BinaryReader(streamLogo).ReadBytes((int)streamLogo.Length));
-            string fnLogo = string.Format("data:image/gif;base64,{0}", base64Logo);
-
-            var streamBarra = assembly.GetManifestResourceStream("BoletoNet.Imagens.barra.gif");
-            string base64Barra = Convert.ToBase64String(new BinaryReader(streamBarra).ReadBytes((int)streamBarra.Length));
-            string fnBarra = string.Format("data:image/gif;base64,{0}", base64Barra);
-
-            var cb = new C2of5i(Boleto.CodigoBarra.Codigo, 1, 50, Boleto.CodigoBarra.Codigo.Length);
-            string base64CodigoBarras = Convert.ToBase64String(cb.ToByte());
-            string fnCodigoBarras = string.Format("data:image/gif;base64,{0}", base64CodigoBarras);
-
-            if (convertLinhaDigitavelToImage)
+            Stream streamBarra = null;
+            try
             {
+                var assembly = Assembly.GetExecutingAssembly();
 
-                string linhaDigitavel = Boleto.CodigoBarra.LinhaDigitavel.Replace("  ", " ").Trim();
+                string base64Logo = Convert.ToBase64String(ObterLogoDoBanco(CodigoBanco));
+                string fnLogo = string.Format("data:image/gif;base64,{0}", base64Logo);
 
-                var imagemLinha = Utils.DrawText(linhaDigitavel, new Font("Arial", 30, FontStyle.Bold), Color.Black, Color.White);
-                string base64Linha = Convert.ToBase64String(Utils.ConvertImageToByte(imagemLinha));
+                streamBarra = assembly.GetManifestResourceStream("BoletoNet.Imagens.barra.gif");
+                string base64Barra = Convert.ToBase64String(new BinaryReader(streamBarra).ReadBytes((int)streamBarra.Length));
+                string fnBarra = string.Format("data:image/gif;base64,{0}", base64Barra);
 
-                string fnLinha = string.Format("data:image/gif;base64,{0}", base64Linha);
+                var cb = new C2of5i(Boleto.CodigoBarra.Codigo, 1, 50, Boleto.CodigoBarra.Codigo.Length);
+                string base64CodigoBarras = Convert.ToBase64String(cb.ToByte());
+                string fnCodigoBarras = string.Format("data:image/gif;base64,{0}", base64CodigoBarras);
 
-                Boleto.CodigoBarra.LinhaDigitavel = @"<img style=""max-width:420px; margin-bottom: 2px"" src=" + fnLinha + " />";
+                if (convertLinhaDigitavelToImage)
+                {
+
+                    string linhaDigitavel = Boleto.CodigoBarra.LinhaDigitavel.Replace("  ", " ").Trim();
+
+                    var imagemLinha = Utils.DrawText(linhaDigitavel, new Font("Arial", 30, FontStyle.Bold), Color.Black, Color.White);
+                    string base64Linha = Convert.ToBase64String(Utils.ConvertImageToByte(imagemLinha));
+
+                    string fnLinha = string.Format("data:image/gif;base64,{0}", base64Linha);
+
+                    Boleto.CodigoBarra.LinhaDigitavel = @"<img style=""max-width:420px; margin-bottom: 2px"" src=" + fnLinha + " />";
+                }
+
+                string s = HtmlOffLine(null, fnLogo, fnBarra, fnCodigoBarras, usaCSSPDF, imprimeHeader, imprimeFooter).ToString();
+
+                if (convertLinhaDigitavelToImage)
+                {
+                    s = s.Replace(".w500", "");
+                }
+
+                return s;
+
             }
-
-            string s = HtmlOffLine(null, fnLogo, fnBarra, fnCodigoBarras, usaCSSPDF).ToString();
-
-            if (convertLinhaDigitavelToImage)
+            finally
             {
-                s = s.Replace(".w500", "");
+                if (streamBarra != null)
+                {
+                    streamBarra.Close();
+                }
             }
-
-            return s;
         }
 
         public byte[] MontaBytesPDF(bool convertLinhaDigitavelToImage = false)
         {
             var converter = new NReco.PdfGenerator.HtmlToPdfConverter();
 
-            if (!string.IsNullOrWhiteSpace(TempFilesPath)){
+            if (!string.IsNullOrWhiteSpace(TempFilesPath))
+            {
                 converter.TempFilesPath = this.TempFilesPath;
             }
 
-            if (!string.IsNullOrEmpty(this.PdfToolPath)) {
+            if (!string.IsNullOrEmpty(this.PdfToolPath))
+            {
                 converter.PdfToolPath = this.PdfToolPath;
             }
             return converter.GeneratePdf(this.MontaHtmlEmbedded(convertLinhaDigitavelToImage, true));
         }
-        
+
         /// <summary>
         /// Lista de Boletos, objetos do tipo
         /// BoletoBancario
@@ -1251,49 +1288,86 @@ namespace BoletoNet
         /// <param name="tituloPDF">Título No Início do PDF</param>
         /// <param name="PretoBranco">Preto e Branco = true</param>
         /// <param name="convertLinhaDigitavelToImage">bool Converter a Linha Digitavel Em Imagem</param>
+        /// <param name="BoletosPorPagina">Quantidade de Boletos até o próximo LineBreak. Lembre de Utilizar o Zoom para ajustar a página</param>
+        /// <param name="ZoomPercent">Percentual da Scala do PDF. Para 3 Boletos na mesma Página com Carnê utilize 80%</param>				
         /// <returns>byte[], Vetor de bytes do PDF</returns>
-        public byte[] MontaBytesListaBoletosPDF(List<BoletoBancario> boletos, string tituloNaView = "", string CustomSwitches = "", string tituloPDF = "", bool PretoBranco = false, bool convertLinhaDigitavelToImage = false)
+        public byte[] MontaBytesListaBoletosPDF(List<BoletoBancario> boletos, string tituloNaView = "", string CustomSwitches = "", string tituloPDF = "", bool PretoBranco = false, bool convertLinhaDigitavelToImage = false, int BoletosPorPagina = 1, float ZoomPercent = 100)
         {
             StringBuilder htmlBoletos = new StringBuilder();
-            htmlBoletos.Append("<html><head><title>");
-            htmlBoletos.Append(tituloNaView);
-            htmlBoletos.Append("</title><style type='text/css' media='screen,print'>");
-            htmlBoletos.Append(".break{ display: block; clear: both; page-break-after: always;}");
-            htmlBoletos.Append("</style></head><body>");
+            HtmlOfflineHeader(htmlBoletos, true, tituloNaView);
+
             if (!string.IsNullOrEmpty(tituloPDF))
             {
                 htmlBoletos.Append("<br/><center><h1>");
                 htmlBoletos.Append(tituloPDF);
                 htmlBoletos.Append("</h1></center><br/>");
             }
+            int qtdeBoletosPagina = 0;
             foreach (BoletoBancario boleto in boletos)
             {
-                htmlBoletos.Append("<div class='break'>");
-                htmlBoletos.Append(boleto.MontaHtmlEmbedded(convertLinhaDigitavelToImage, true));
+                qtdeBoletosPagina++;
+
+                if (qtdeBoletosPagina % BoletosPorPagina == 0)
+                {
+                    htmlBoletos.Append("<div class='break'>");
+                    qtdeBoletosPagina = 0;
+                }
+                else
+                {
+                    htmlBoletos.Append("<div>");
+                }
+                htmlBoletos.Append(boleto.MontaHtmlEmbedded(convertLinhaDigitavelToImage, true, false, false));
                 htmlBoletos.Append("</div>");
             }
-            htmlBoletos.Append("</body></html>");
+            HtmlOfflineFooter(htmlBoletos);
+
             var converter = new NReco.PdfGenerator.HtmlToPdfConverter()
             {
-              CustomWkHtmlArgs = CustomSwitches,
-              Grayscale = PretoBranco
+                CustomWkHtmlArgs = CustomSwitches,
+                Grayscale = PretoBranco,
+                Zoom = ZoomPercent / 100
             };
-            if (!string.IsNullOrEmpty(this.PdfToolPath)) {
+            if (!string.IsNullOrEmpty(this.PdfToolPath))
+            {
                 converter.PdfToolPath = this.PdfToolPath;
             }
-            if (!string.IsNullOrEmpty(this.TempFilesPath)) {
+            if (!string.IsNullOrEmpty(this.TempFilesPath))
+            {
                 converter.TempFilesPath = this.TempFilesPath;
             }
 
             return converter.GeneratePdf(htmlBoletos.ToString());
         }
-        
+
         #endregion Geração do Html OffLine
 
         public System.Drawing.Image GeraImagemCodigoBarras(Boleto boleto)
         {
             C2of5i cb = new C2of5i(boleto.CodigoBarra.Codigo, 1, 50, boleto.CodigoBarra.Codigo.Length);
             return cb.ToBitmap();
+        }
+
+        /// <summary>
+        /// Obtem o array de bytes da logo do banco.
+        /// </summary>
+        /// <returns>bytes da logo</returns>
+        public static byte[] ObterLogoDoBanco(short codigoBanco)
+        {
+            Stream streamLogo = null;
+            try
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                streamLogo = assembly.GetManifestResourceStream(string.Format("BoletoNet.Imagens.{0}.jpg", codigoBanco.ToString("000")));
+                return new BinaryReader(streamLogo).ReadBytes((int)streamLogo.Length);
+            }
+            finally
+            {
+                if (streamLogo != null)
+                {
+                    streamLogo.Close();
+                }
+            }
+
         }
 
         private void CopiarStream(Stream entrada, Stream saida)
